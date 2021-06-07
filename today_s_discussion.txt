@@ -1,0 +1,334 @@
+1) Understanding or defining framework.
+2) Spring Architecture
+3) What are the different types of dependency injection
+   * setter
+   * constructor
+4) Beans to load object properties
+5) what is Autowiring?
+ -------------------------------------------------------------------------------------------------------------
+JDBC  =====> Spring and JDBC
+AOP
+------------------------------------------------------------------------------------------------------
+Write a code of accessing Data. The Spring Framework gives 
+a loosely coupled , high level , clean solution with range of 
+customized exception using DAO ( Data access Design pattern ).
+
+Connection====> Which has to be managed by developer, so do the exceptions while handling it. 
+Spring has an elegant and loosely coupled way to manage the connection using DataSource.
+                 ----------.
+In Enterprise Application we try to establish DB connection with 
+DataSource object. Connection pool concept. 
+
+DataSource is the factory for data source connections similar to DriverManager in JDBC, which 
+helps in connection management.
+
+DriverManagerDataSource,SingleConnectionDataSource,SmartDataSource,AbstractDataSource,
+DataSourceTransactionManager.
+
+DriverManagerDataSource: The DriverManager class provides a simple implementation of DataSource
+to be used as a standalone application that enables a new connection object on every request via
+getConnection.
+
+Using template classes to perform JDBC operations
+
+Template classes provide an abstract way to define operations by getting rid of common issues, such
+as opening and maintaining the connection , or such as getting Statement objects. 
+
+JdbcTemplate.
+-----------------------------------------------------------------------------
+
+
+CREATE DATABASE studentDBDemo;
+USE studentDBDemo;
+CREATE table student (
+roll INT AUTO_INCREMENT,
+name VARCHAR(20),
+marks INT,
+PRIMARY KEY(roll)
+);
+
+--------------------------------------------------------------------------------------------------
+
+Let us create a maven project and update pom.xml for the dependencies.
+
+* spring jdbc
+* mysql connection ( driver)
+* spring-context
+------------------------------------------------------------------------------------
+pom.xml
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.cts.demo</groupId>
+  <artifactId>jdbctemplatedemo</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  
+  <dependencies>
+  <!-- https://mvnrepository.com/artifact/org.springframework/spring-jdbc -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-jdbc</artifactId>
+    <version>5.3.7</version>
+</dependency>
+  <!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
+<dependency>
+    <groupId>mysql</groupId>
+    <artifactId>mysql-connector-java</artifactId>
+    <version>8.0.20</version>
+</dependency>
+  <!-- https://mvnrepository.com/artifact/org.springframework/spring-context -->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-context</artifactId>
+    <version>5.3.7</version>
+</dependency>
+  
+  
+  
+  </dependencies>
+  
+</project>
+
+
+--------------------------------------------------------------------------------------------------
+
+model class :
+
+package com.cts.demo.model;
+
+public class Student {
+private int roll;
+private String name;
+private int marks;
+
+
+
+public Student() {
+	super();
+	// TODO Auto-generated constructor stub
+}
+
+
+
+public Student(int roll, String name, int marks) {
+	super();
+	this.roll = roll;
+	this.name = name;
+	this.marks = marks;
+}
+
+
+
+public int getRoll() {
+	return roll;
+}
+public void setRoll(int roll) {
+	this.roll = roll;
+}
+public String getName() {
+	return name;
+}
+public void setName(String name) {
+	this.name = name;
+}
+public int getMarks() {
+	return marks;
+}
+public void setMarks(int marks) {
+	this.marks = marks;
+}
+
+
+
+
+@Override
+public int hashCode() {
+	final int prime = 31;
+	int result = 1;
+	result = prime * result + marks;
+	result = prime * result + ((name == null) ? 0 : name.hashCode());
+	result = prime * result + roll;
+	return result;
+}
+@Override
+public boolean equals(Object obj) {
+	if (this == obj)
+		return true;
+	if (obj == null)
+		return false;
+	if (getClass() != obj.getClass())
+		return false;
+	Student other = (Student) obj;
+	if (marks != other.marks)
+		return false;
+	if (name == null) {
+		if (other.name != null)
+			return false;
+	} else if (!name.equals(other.name))
+		return false;
+	if (roll != other.roll)
+		return false;
+	return true;
+}
+@Override
+public String toString() {
+	return "Student [roll=" + roll + ", name=" + name + ", marks=" + marks + "]";
+}
+
+}
+
+-----------------------------------------------------------------------------------------------------
+
+dao class/interface
+
+package com.cts.demo.dao;
+
+import java.util.List;
+
+import javax.sql.DataSource;
+
+import com.cts.demo.model.Student;
+
+public interface StudentDAO {
+	public void setDataSource(DataSource ds);
+	public void insertStudent(String name, int marks);
+        public List<Student> listStudents();
+        public void deleteStudent(int roll);
+        public void updateStudent(int roll, int marks);
+ }
+--------------------------------------------
+package com.cts.demo.dao;
+
+import java.util.List;
+
+import javax.sql.DataSource;
+
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import com.cts.demo.model.Student;
+
+public class StudentJdbcTemplate implements StudentDAO {
+
+	private DataSource dataSource;
+	private JdbcTemplate jdbcTemplate;
+	
+	
+	public void setDataSource(DataSource ds) {
+		     this.dataSource=ds;
+		     jdbcTemplate=new JdbcTemplate(ds);
+
+	}
+
+	public void insertStudent(String name, int marks) {
+		String insertSQL="INSERT INTO student(name,marks) VALUES(?,?)";
+		jdbcTemplate.update(insertSQL,name,marks);
+
+	}
+
+	public List<Student> listStudents() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public void deleteStudent(int roll) {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void updateStudent(int roll, int marks) {
+		// TODO Auto-generated method stub
+
+	}
+
+}
+
+
+------------------------------------------------------------------------------------------------
+Beans.xml
+
+<?xml version = "1.0" encoding = "UTF-8"?>
+
+<beans xmlns = "http://www.springframework.org/schema/beans"
+   xmlns:xsi = "http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation = "http://www.springframework.org/schema/beans
+   http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+   <bean id = "dataSource" class = "org.springframework.jdbc.datasource.DriverManagerDataSource">
+      <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/>
+      <property name="url" value="jdbc:mysql://localhost:3306/studentDBDemo"/>
+      <property name="username" value="root"/>
+      <property name="password" value="password@123"/>
+   </bean>
+
+  
+   <bean id ="studentJdbcTemplate" class="com.cts.demo.dao.StudentJdbcTemplate">
+     <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+</beans>
+
+
+-------------------------------------------------------------------------------------------------
+mapper class:-
+Mapper class basically maps the table record.
+package com.cts.demo.mapper;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import org.springframework.jdbc.core.RowMapper;
+
+import com.cts.demo.model.Student;
+// Object of StudentMapper is mapping to each record of student table
+public class StudentMapper implements RowMapper<Student>
+{
+	public Student mapRow(ResultSet rs, int rowNum) throws SQLException {
+		// TODO Auto-generated method stub
+		Student student=new Student();
+		student.setRoll(rs.getInt(1));
+		student.setName(rs.getString(2));
+		student.setMarks(rs.getInt(3));
+		return student;
+	} 
+
+}
+
+----------------------------------------------------------------------------------------------------
+main method within main class to execute the program or the code.
+
+
+package com.cts.demo.main;
+
+import java.util.Scanner;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import com.cts.demo.dao.StudentJdbcTemplate;
+
+public class Main {
+
+	public static void main(String[] args) {
+		
+		ApplicationContext context=new ClassPathXmlApplicationContext("Beans.xml");
+		StudentJdbcTemplate studentTemplate=(StudentJdbcTemplate)context.getBean("studentJdbcTemplate");
+	    Scanner scanner=new Scanner(System.in);
+	    System.out.println("Enter student's name");
+	    String name=scanner.next();
+	    System.out.println("Enter student's marks");
+	    int marks=scanner.nextInt();
+	    studentTemplate.insertStudent(name, marks);
+	
+	}
+
+}
+----------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+   
